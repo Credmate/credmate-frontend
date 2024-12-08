@@ -7,6 +7,7 @@ import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import DiamondIcon from '@mui/icons-material/Diamond';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { useState, useRef } from 'react';
+import { initializeRazorpayPayment } from '../utils/razorpay';
 
 export default function UpgradePage() {
   const [hoveredPlan, setHoveredPlan] = useState<string | null>(null);
@@ -19,6 +20,41 @@ export default function UpgradePage() {
   });
 
   const backgroundY = useTransform(scrollYProgress, [0, 1], ['0%', '100%']);
+
+    //extracting plan , amount and calling the backend for orderid
+    const handlePayment = async (plan: { name: string, price: string }) => {
+      try {
+        // Extract numeric amount from price string
+        const amount = parseInt(plan.price.replace('₹', '').replace(',', '')) * 100; // Convert to paise
+  
+        // Call your backend API to create an order
+        const response = await fetch('/api/create-razorpay-order', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            amount, 
+            currency: 'INR',
+            planName: plan.name 
+          }),
+        });
+  
+        const data = await response.json();
+  
+        if (data.orderId) {
+          // Initialize Razorpay payment
+          await initializeRazorpayPayment(data.orderId, amount, 'INR');
+        } else {
+          throw new Error('Failed to create order');
+        }
+      } catch (error) {
+        console.error('Payment initiation failed:', error);
+        alert('Failed to initiate payment. Please try again.');
+      }
+    };
+  
+  
 
   const plans = [
     {
@@ -69,9 +105,12 @@ export default function UpgradePage() {
     }
   ];
 
+
   const filteredPlans = planType === 'all' 
     ? plans 
     : plans.filter(plan => plan.type === planType);
+
+  
 
   return (
     <div className="min-h-screen bg-white">
@@ -228,6 +267,8 @@ export default function UpgradePage() {
                           whileHover={{ scale: 1.03 }}
                           whileTap={{ scale: 0.98 }}
                           className={`w-full mt-8 py-4 px-6 rounded-2xl bg-gradient-to-r ${plan.color} text-white font-semibold text-lg hover:shadow-xl hover:shadow-pink-200/30 transition-all duration-300 relative overflow-hidden group`}
+                          //plan rendering 
+                          onClick={() => handlePayment(plan)}
                         >
                           <span className="relative z-10">Get Started</span>
                           <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
