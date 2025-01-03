@@ -9,21 +9,6 @@ export default function CreditScoreContainer() {
     'credmate'
   );
 
-  // Example credit score data
-  const credmateScore = {
-    score: 738,
-    maxScore: 1000,
-    status: 'Very Good',
-  };
-
-  const cibilScore = {
-    score: 785,
-    maxScore: 900,
-    status: 'Excellent',
-  };
-
-  const currentScore = activeScore === 'credmate' ? credmateScore : cibilScore;
-
   return (
     <div className=' credit-score-section'>
       <div className='flex justify-center gap-2 mb-4'>
@@ -49,11 +34,7 @@ export default function CreditScoreContainer() {
         </button>
       </div>
 
-      <CreditScoreGauge
-        score={currentScore.score}
-        maxScore={currentScore.maxScore}
-        status={currentScore.status}
-      />
+      <CreditScoreGauge scoreType={activeScore} />
 
       <p className='text-center text-[#8A8A8A] mx-1 mb-3 px-1'>
         Your{' '}

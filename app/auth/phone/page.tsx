@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { RecaptchaVerifier, signInWithPhoneNumber, Auth } from 'firebase/auth';
 import { auth } from '../../../lib/firebase';
 import { motion } from 'framer-motion';
-import Image from 'next/image';
 import { storeAuthTokens } from '@/utils/auth';
 
 // Country codes data

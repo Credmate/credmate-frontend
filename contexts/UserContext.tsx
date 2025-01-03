@@ -17,77 +17,10 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'user_profile';
-const PROFILE_TIMESTAMP_KEY = 'profile_last_fetched';
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-
-// Helper functions for localStorage
-const storage = {
-  get: (key: string) => {
-    if (typeof window !== 'undefined') {
-      const item = localStorage.getItem(key);
-      return item ? JSON.parse(item) : null;
-    }
-    return null;
-  },
-  set: (key: string, value: any) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(key, JSON.stringify(value));
-    }
-  },
-  remove: (key: string) => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(key);
-    }
-  },
-};
-
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const fetchProfile = async (): Promise<ProfileData | null> => {
-    try {
-      const user = auth.currentUser;
-
-      if (!user) {
-        console.log('No authenticated user found');
-        return null;
-      }
-
-      const idToken = await user.getIdToken(true);
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/user/complete-profile`,
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch profile: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-      throw error;
-    }
-  };
-
-  const shouldFetchProfile = () => {
-    const lastFetched = storage.get(PROFILE_TIMESTAMP_KEY);
-    if (!lastFetched) return true;
-
-    const timeSinceLastFetch = Date.now() - parseInt(lastFetched);
-    return timeSinceLastFetch > CACHE_DURATION;
-  };
 
   const refreshProfile = async () => {
     setIsLoading(true);
@@ -97,20 +30,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       const user = auth.currentUser;
       if (!user) {
         setUserProfile(null);
-        storage.remove(STORAGE_KEY);
+        localStorage.removeItem('user_profile');
         return;
       }
 
-      const data = await fetchProfile();
+      const data = await getProfileData(user.uid);
 
-      if (data) {
-        setUserProfile(data);
-        storage.set(STORAGE_KEY, data);
-        storage.set(PROFILE_TIMESTAMP_KEY, Date.now().toString());
-      } else {
-        setUserProfile(null);
-        storage.remove(STORAGE_KEY);
-      }
+      setUserProfile(data);
     } catch (err) {
       console.error('Error refreshing profile:', err);
       setError('Failed to fetch user profile');

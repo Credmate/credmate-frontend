@@ -33,6 +33,11 @@ interface ProfileData {
   createdAt?: string;
   updatedAt?: string;
 
+  // credit score
+  credmate_score?: number;
+  cibil_score?: number;
+  credit_score_enabled?: boolean;
+
   // Profile component fields
   address?: string;
   bio?: string;
